@@ -63,17 +63,19 @@ class PollSerializer(serializers.ModelSerializer):
 
         instance.title = validated_data.get('title', instance.title)
         instance.description = validated_data.get('description', instance.description)
+        instance.premium = validated_data.get('premium', instance.premium)
         instance.save()
 
+        # questions - pitanja iz baze
+        # questions_data - pitanja iz requesta
         i = 0
         for q_instance in questions:
             q_data = questions_data[i]
-            question = questions.pop(0)
-            question.content = q_data.get('content', question.content)
-            question.type = q_data.get('type', question.type)
-            question.choices = q_data.get('choices', question.choices)
-            question.required = q_data.get('required', question.required)
-            question.save()
+            q_instance.content = q_data.get('content', q_instance.content)
+            q_instance.type = q_data.get('type', q_instance.type)
+            q_instance.choices = q_data.get('choices', q_instance.choices)
+            q_instance.required = q_data.get('required', q_instance.required)
+            q_instance.save()
             i += 1
 
         while i < len(questions_data):

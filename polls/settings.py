@@ -28,7 +28,7 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'cg#p$g+j9tax!#a3cup@1$8obt2_+&
 DEBUG = os.environ.get('DJANGO_DEBUG', '') != 'False'
 
 
-ALLOWED_HOSTS = ['anketa-backend.herokuapp.com', '127.0.0.1', 'localhost']
+ALLOWED_HOSTS = ['polls-backend-123.herokuapp.com', '127.0.0.1', 'localhost']
 
 CORS_ORIGIN_ALLOW_ALL = True
 
@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'pollsapp',
     'django.contrib.admin',
     'django.contrib.auth',
+    'django.contrib.sites',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
@@ -58,7 +59,6 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'allauth',
     'allauth.account',
-    'django.contrib.sites',
     'rest_auth',
     'rest_auth.registration',
     'corsheaders',

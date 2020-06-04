@@ -49,7 +49,7 @@ class SubmittedPoll(models.Model):
 
 
 class Answer(models.Model):
-    answer = models.CharField(max_length=100)
+    answer = models.CharField(max_length=100, blank=True, null=True)
     question = models.ForeignKey(Question, related_name='answers', on_delete=models.CASCADE)
     submitted_poll = models.ForeignKey(SubmittedPoll, related_name='answers', on_delete=models.CASCADE)
 
