@@ -5,6 +5,10 @@ from rest_auth.models import TokenModel
 from rest_auth.utils import import_callable
 from rest_auth.serializers import UserDetailsSerializer as DefaultUserDetailsSerializer
 
+import logging
+logger = logging.getLogger("mylogger")
+logger.info("Whatever to log")
+
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
@@ -58,6 +62,7 @@ class PollSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         questions_data = validated_data.pop('questions')
+        logger.info(questions_data)
         questions = (instance.questions).all()
         questions = list(questions)
 
@@ -71,11 +76,16 @@ class PollSerializer(serializers.ModelSerializer):
         i = 0
         for q_instance in questions:
             q_data = questions_data[i]
+            logger.info(q_instance.id)
+            logger.info(q_data)
+            # if q_instance.id == q_data.get('id'):
             q_instance.content = q_data.get('content', q_instance.content)
             q_instance.type = q_data.get('type', q_instance.type)
             q_instance.choices = q_data.get('choices', q_instance.choices)
             q_instance.required = q_data.get('required', q_instance.required)
             q_instance.save()
+            # else:
+            #     q_instance.delete()
             i += 1
 
         while i < len(questions_data):
