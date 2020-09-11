@@ -31,10 +31,12 @@ class CustomTokenSerializer(serializers.ModelSerializer):
 
 
 class QuestionSerializer(serializers.ModelSerializer):
+    id = serializers.ModelField(model_field=Question()._meta.get_field('id'))
+
     class Meta:
         model = Question
         fields = ['id', 'content', 'choices', 'type', 'required', 'answers']
-        read_only_fields = ('id', 'answers',)
+        read_only_fields = ( 'answers','id',)
 
 
 class AnswerSerializer(serializers.ModelSerializer):
@@ -62,35 +64,62 @@ class PollSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         questions_data = validated_data.pop('questions')
+        questions_data = list(questions_data)
         logger.info(questions_data)
         questions = (instance.questions).all()
-        questions = list(questions)
+        questions = list(questions) #pitanja u bazi
 
         instance.title = validated_data.get('title', instance.title)
         instance.description = validated_data.get('description', instance.description)
         instance.premium = validated_data.get('premium', instance.premium)
         instance.save()
+        questions_to_delete = []
 
         # questions - pitanja iz baze
         # questions_data - pitanja iz requesta
-        i = 0
-        for q_instance in questions:
-            q_data = questions_data[i]
-            logger.info(q_instance.id)
-            logger.info(q_data)
-            # if q_instance.id == q_data.get('id'):
-            q_instance.content = q_data.get('content', q_instance.content)
-            q_instance.type = q_data.get('type', q_instance.type)
-            q_instance.choices = q_data.get('choices', q_instance.choices)
-            q_instance.required = q_data.get('required', q_instance.required)
-            q_instance.save()
-            # else:
-            #     q_instance.delete()
-            i += 1
 
-        while i < len(questions_data):
-            Question.objects.create(poll=instance, **questions_data[i])
-            i += 1
+        for q_instance in questions:
+            found_question = next(q for q in questions_data if q.get('id') == q_instance.id)
+            if (found_question):
+                # pitanje postoji->update pitanja u bazi
+                # brisanje pitanja iz requesta kako bi ostala samo pitanja koja treba dodati
+                q_instance.content = found_question.get('content', q_instance.content)
+                q_instance.type = found_question.get('type', q_instance.type)
+                q_instance.choices = found_question.get('choices', q_instance.choices)
+                q_instance.required = found_question.get('required', q_instance.required)
+                q_instance.save()
+                questions_data.remove(found_question)
+
+            else:
+                # dodajemo q_instance u questions to delete
+                questions_to_delete.append(q_instance)
+
+        for q in questions_data:
+            Question.objects.create(poll=instance, **q)
+
+        for q in questions_to_delete:
+            q.delete()
+        """
+                if (q_instance)
+                q_data = questions_data[i]
+                logger.info(q_instance.id)
+                logger.info(q_data)
+                # if q_instance.id == q_data.get('id'):
+                q_instance.content = q_data.get('content', q_instance.content)
+                q_instance.type = q_data.get('type', q_instance.type)
+                q_instance.choices = q_data.get('choices', q_instance.choices)
+                q_instance.required = q_data.get('required', q_instance.required)
+                q_instance.save()
+                # else:
+                #     q_instance.delete()
+                i += 1
+    
+            while i < len(questions_data):
+                Question.objects.create(poll=instance, **questions_data[i])
+                i += 1
+        """
+
+
 
         return instance
 
