@@ -1,5 +1,5 @@
 #### Initialize python environment
-`python3 -m venv env`
+`python -m venv env`
 
 env activation:
 - linux: `source env/bin/activate`
