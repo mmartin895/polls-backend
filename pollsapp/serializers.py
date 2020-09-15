@@ -1,3 +1,5 @@
+import collections
+
 from rest_framework import serializers
 from .models import Poll, Question, Answer, CustomUser, SubmittedPoll
 from django.conf import settings
@@ -6,8 +8,10 @@ from rest_auth.utils import import_callable
 from rest_auth.serializers import UserDetailsSerializer as DefaultUserDetailsSerializer
 
 import logging
+
 logger = logging.getLogger("mylogger")
 logger.info("Whatever to log")
+
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -21,6 +25,7 @@ rest_auth_serializers = getattr(settings, 'REST_AUTH_SERIALIZERS', {})
 UserDetailsSerializer = import_callable(
     rest_auth_serializers.get('USER_DETAILS_SERIALIZER', DefaultUserDetailsSerializer)
 )
+
 
 class CustomTokenSerializer(serializers.ModelSerializer):
     user = UserDetailsSerializer(read_only=True)
@@ -36,7 +41,7 @@ class QuestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Question
         fields = ['id', 'content', 'choices', 'type', 'required', 'answers']
-        read_only_fields = ( 'answers','id',)
+        read_only_fields = ('answers', 'id',)
 
 
 class AnswerSerializer(serializers.ModelSerializer):
@@ -59,6 +64,7 @@ class PollSerializer(serializers.ModelSerializer):
         questions_data = validated_data.pop('questions')
         poll = Poll.objects.create(**validated_data)
         for question in questions_data:
+            del question['id']
             Question.objects.create(poll=poll, **question)
         return poll
 
@@ -67,7 +73,7 @@ class PollSerializer(serializers.ModelSerializer):
         questions_data = list(questions_data)
         logger.info(questions_data)
         questions = (instance.questions).all()
-        questions = list(questions) #pitanja u bazi
+        questions = list(questions)  # pitanja u bazi
 
         instance.title = validated_data.get('title', instance.title)
         instance.description = validated_data.get('description', instance.description)
@@ -79,8 +85,8 @@ class PollSerializer(serializers.ModelSerializer):
         # questions_data - pitanja iz requesta
 
         for q_instance in questions:
-            found_question = next(q for q in questions_data if q.get('id') == q_instance.id)
-            if (found_question):
+            found_question = next((q for q in questions_data if q.get('id') == q_instance.id), None)
+            if found_question:
                 # pitanje postoji->update pitanja u bazi
                 # brisanje pitanja iz requesta kako bi ostala samo pitanja koja treba dodati
                 q_instance.content = found_question.get('content', q_instance.content)
@@ -95,6 +101,7 @@ class PollSerializer(serializers.ModelSerializer):
                 questions_to_delete.append(q_instance)
 
         for q in questions_data:
+            del q['id']
             Question.objects.create(poll=instance, **q)
 
         for q in questions_to_delete:
@@ -118,8 +125,6 @@ class PollSerializer(serializers.ModelSerializer):
                 Question.objects.create(poll=instance, **questions_data[i])
                 i += 1
         """
-
-
 
         return instance
 
