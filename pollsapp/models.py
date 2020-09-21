@@ -2,6 +2,7 @@ from django.db import models
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import AbstractUser
+import datetime
 
 class CustomUser(AbstractUser):
 
@@ -23,6 +24,7 @@ class Poll(models.Model):
 
     def setArchived(self, archived):
         self.archived = archived
+        self.archived_at = datetime.datetime.now()
 
 class Question(models.Model):
     class QuestionChoice(models.TextChoices):
