@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Poll, Question, Answer, CustomUser
+from .models import Poll, Question, Answer, CustomUser, FavoritePoll
 
 class UserAdmin(admin.ModelAdmin):
     fieldsets = None
@@ -17,7 +17,12 @@ class AnswerAdmin(admin.ModelAdmin):
     fieldsets = None
     list_display = ('answer', 'submitted_poll', 'question')
 
+class FavoritePollAdmin(admin.ModelAdmin):
+    fieldsets = None
+    list_display = ('user', 'poll')    
+
 admin.site.register(CustomUser, UserAdmin)
 admin.site.register(Poll, PollAdmin)
 admin.site.register(Question, QuestionAdmin)
 admin.site.register(Answer, AnswerAdmin)
+admin.site.register(FavoritePoll, FavoritePollAdmin)

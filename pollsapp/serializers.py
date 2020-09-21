@@ -1,7 +1,7 @@
 import collections
 
 from rest_framework import serializers
-from .models import Poll, Question, Answer, CustomUser, SubmittedPoll
+from .models import Poll, Question, Answer, CustomUser, SubmittedPoll, FavoritePoll
 from django.conf import settings
 from rest_auth.models import TokenModel
 from rest_auth.utils import import_callable
@@ -144,3 +144,12 @@ class SubmittedPollSerializer(serializers.ModelSerializer):
         for answer in answers_data:
             Answer.objects.create(submitted_poll=submitted_poll, **answer)
         return submitted_poll
+
+class FavoritePollSerializer(serializers.ModelSerializer):
+    user = serializers.ReadOnlyField(source='user.email')
+    poll = serializers.ReadOnlyField(source='poll.id')
+
+    class Meta:
+        model = FavoritePoll
+        fields = ['id', 'poll', 'user']
+        read_only_fields = ('id', 'poll', 'user',)        

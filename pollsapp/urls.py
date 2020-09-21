@@ -7,6 +7,7 @@ router.register(r'polls', views.PollViewSet)
 router.register(r'questions', views.QuestionViewSet)
 router.register(r'submitted-polls', views.SubmittedPollViewSet)
 router.register(r'answers', views.AnswerViewSet)
+router.register(r'favorite-polls', views.FavoritePollViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),

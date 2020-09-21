@@ -57,3 +57,7 @@ class Answer(models.Model):
 
     def __str__(self):
         return self.answer
+
+class FavoritePoll(models.Model):
+    poll = models.ForeignKey(Poll, related_name='favorite_polls', on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='favorite_polls', on_delete=models.CASCADE, blank=True, null=True)

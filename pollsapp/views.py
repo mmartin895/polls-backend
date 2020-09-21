@@ -3,8 +3,8 @@ from rest_framework import generics
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from .serializers import PollSerializer, QuestionSerializer, SubmittedPollSerializer, AnswerSerializer, UserSerializer
-from .models import Poll, Question, SubmittedPoll, Answer, CustomUser
+from .serializers import PollSerializer, QuestionSerializer, SubmittedPollSerializer, AnswerSerializer, UserSerializer, FavoritePollSerializer
+from .models import Poll, Question, SubmittedPoll, Answer, CustomUser, FavoritePoll
 
 class UserListView(generics.ListAPIView):
     queryset = CustomUser.objects.all()
@@ -59,3 +59,10 @@ class AnswerViewSet(viewsets.ModelViewSet):
     queryset = Answer.objects.all()
     serializer_class = AnswerSerializer
 
+class FavoritePollViewSet(viewsets.ModelViewSet):
+    queryset = FavoritePoll.objects.all()
+    serializer_class = FavoritePollSerializer
+
+    def get_queryset(self):
+        queryset = FavoritePoll.objects.filter(user=self.request.user) 
+        return queryset
