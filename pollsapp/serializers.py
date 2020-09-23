@@ -106,25 +106,6 @@ class PollSerializer(serializers.ModelSerializer):
 
         for q in questions_to_delete:
             q.delete()
-        """
-                if (q_instance)
-                q_data = questions_data[i]
-                logger.info(q_instance.id)
-                logger.info(q_data)
-                # if q_instance.id == q_data.get('id'):
-                q_instance.content = q_data.get('content', q_instance.content)
-                q_instance.type = q_data.get('type', q_instance.type)
-                q_instance.choices = q_data.get('choices', q_instance.choices)
-                q_instance.required = q_data.get('required', q_instance.required)
-                q_instance.save()
-                # else:
-                #     q_instance.delete()
-                i += 1
-    
-            while i < len(questions_data):
-                Question.objects.create(poll=instance, **questions_data[i])
-                i += 1
-        """
 
         return instance
 
