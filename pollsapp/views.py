@@ -30,8 +30,8 @@ class PollViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def favorites(self, request):
         user = self.request.user
-        favorites = list(FavoritePoll.objects.all()
-            .filter(user_id=user.id).all()
+        favorites = list(FavoritePoll.objects
+            .filter(user_id=user.id)
             .select_related('poll'))
             
         favoritePolls = list()
