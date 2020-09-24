@@ -18,6 +18,7 @@ class Poll(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     archived_at = models.DateTimeField(blank=True, null=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='polls', on_delete=models.CASCADE)
+    favoritepoll = models.ManyToManyField('CustomUser', through='FavoritePoll')
 
     def __str__(self):
         return self.title
@@ -59,5 +60,5 @@ class Answer(models.Model):
         return self.answer
 
 class FavoritePoll(models.Model):
-    poll = models.ForeignKey(Poll, related_name='favorite_polls', on_delete=models.CASCADE)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='favorite_polls', on_delete=models.CASCADE, blank=True, null=True)
+    poll = models.ForeignKey(Poll, related_name='poll', on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='user', on_delete=models.CASCADE, blank=True, null=True)

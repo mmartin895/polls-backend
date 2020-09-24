@@ -8,6 +8,7 @@ from .serializers import PollSerializer, QuestionSerializer, SubmittedPollSerial
 from .models import Poll, Question, SubmittedPoll, Answer, CustomUser, FavoritePoll
 from django.http import HttpResponseForbidden
 
+
 class UserListView(generics.ListAPIView):
     queryset = CustomUser.objects.all()
     serializer_class = UserSerializer
@@ -25,6 +26,13 @@ class PollViewSet(viewsets.ModelViewSet):
         poll.setArchived(True)
         poll.save()
         return Response({'status': 'archived set'})
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def favorites(self, request):
+        user = self.request.user
+        polls = Poll.objects.filter(favoritepoll__user__user_id=user.id).distinct()
+        serializer = PollSerializer(polls, many=True)     
+        return Response(serializer.data)   
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
