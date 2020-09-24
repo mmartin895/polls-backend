@@ -40,6 +40,17 @@ class PollViewSet(viewsets.ModelViewSet):
         
         serializer = PollSerializer(favoritePolls, many=True)     
         return Response(serializer.data)   
+    
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        if not (instance.user==self.request.user):
+            return Response({'status': 'unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        self.perform_update(serializer)
+        return Response(serializer.data)
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
