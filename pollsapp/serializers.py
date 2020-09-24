@@ -133,4 +133,4 @@ class FavoritePollSerializer(serializers.ModelSerializer):
     class Meta:
         model = FavoritePoll
         fields = ['id', 'poll', 'user']
-        read_only_fields = ('id', 'poll', 'user',)        
+        read_only_fields = ('id',)        

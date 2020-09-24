@@ -1,5 +1,5 @@
 from rest_framework import viewsets
-from rest_framework import generics
+from rest_framework import generics, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
@@ -30,8 +30,15 @@ class PollViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def favorites(self, request):
         user = self.request.user
-        polls = Poll.objects.filter(favoritepoll__user__user_id=user.id).distinct()
-        serializer = PollSerializer(polls, many=True)     
+        favorites = list(FavoritePoll.objects.all()
+            .filter(user_id=user.id).all()
+            .select_related('poll'))
+            
+        favoritePolls = list()
+        for fp in favorites:
+            favoritePolls.append(fp.poll)
+        
+        serializer = PollSerializer(favoritePolls, many=True)     
         return Response(serializer.data)   
 
     def perform_create(self, serializer):
@@ -82,3 +89,23 @@ class FavoritePollViewSet(viewsets.ModelViewSet):
     queryset = FavoritePoll.objects.all()
     serializer_class = FavoritePollSerializer
     permission_classes = (IsAdminUser,) 
+    permission_classes_by_action = {'create': [IsAuthenticated]} 
+
+
+    def perform_create(self, serializer):
+        user=self.request.user
+        poll = Poll.objects.get(pk=self.request.data['poll'])
+        if not (FavoritePoll.objects.filter(user_id=user.id,poll_id=poll.id).exists()):
+            favoritePoll = FavoritePoll()
+            favoritePoll.user = user
+            favoritePoll.poll = poll
+            favoritePoll.save()
+       
+
+    def get_permissions(self):
+        try:
+            # return permission_classes depending on `action` 
+            return [permission() for permission in self.permission_classes_by_action[self.action]]
+        except KeyError: 
+            # action is not set return default permission_classes
+            return [permission() for permission in self.permission_classes]            
