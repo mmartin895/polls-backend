@@ -7,6 +7,7 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from .serializers import PollSerializer, QuestionSerializer, SubmittedPollSerializer, AnswerSerializer, UserSerializer, FavoritePollSerializer
 from .models import Poll, Question, SubmittedPoll, Answer, CustomUser, FavoritePoll
 from django.http import HttpResponseForbidden
+from django.shortcuts import get_object_or_404
 
 
 class UserListView(generics.ListAPIView):
@@ -111,6 +112,13 @@ class FavoritePollViewSet(viewsets.ModelViewSet):
             favoritePoll.user = user
             favoritePoll.poll = poll
             favoritePoll.save()
+
+    def destroy(self, request, *args, **kwargs):
+        user=self.request.user
+        instance = get_object_or_404(FavoritePoll.objects.filter(user_id=user.id,poll_id=kwargs['pk']))
+        
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)            
        
 
     def get_permissions(self):
