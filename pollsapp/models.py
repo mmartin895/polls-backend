@@ -19,8 +19,22 @@ class Poll(models.Model):
     archived_at = models.DateTimeField(blank=True, null=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='polls', on_delete=models.CASCADE)
 
-    def __str__(self):
-        return self.title
+    isFavorite = False
+    
+    # def __init__(self, *args, **kwargs):
+    #     super(Poll, self).__init__(*args, **kwargs)
+    #     self.isFavorite = False
+
+    # @property
+    # def isFavorite(self):
+    #     return self.__isFavorite
+
+    # @isFavorite.setter
+    # def isFavorite(self, var):
+    #     self.__isFavorite = var
+
+    # def __str__(self):
+    #     return self.title
 
     def setArchived(self, archived):
         self.archived = archived
