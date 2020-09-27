@@ -42,6 +42,15 @@ class PollViewSet(viewsets.ModelViewSet):
         serializer = PollSerializer(favoritePolls, many=True)     
         return Response(serializer.data)   
 
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if (request.user.is_authenticated):
+            favorites = list(FavoritePoll.objects.filter(user_id = self.request.user.id))
+            instance.isFavorite = next((fav for fav in favorites if fav.poll_id == instance.id), None) is not None
+
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)        
+
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
 
@@ -65,7 +74,6 @@ class PollViewSet(viewsets.ModelViewSet):
         for poll in serializer.data:
             favorite = next((fav for fav in favorites if fav.poll_id == poll['id']), None)
             poll['isFavorite'] = favorite is not None
-
     
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)

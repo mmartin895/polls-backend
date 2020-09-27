@@ -21,21 +21,6 @@ class Poll(models.Model):
 
     isFavorite = False
     
-    # def __init__(self, *args, **kwargs):
-    #     super(Poll, self).__init__(*args, **kwargs)
-    #     self.isFavorite = False
-
-    # @property
-    # def isFavorite(self):
-    #     return self.__isFavorite
-
-    # @isFavorite.setter
-    # def isFavorite(self, var):
-    #     self.__isFavorite = var
-
-    # def __str__(self):
-    #     return self.title
-
     def setArchived(self, archived):
         self.archived = archived
         self.archived_at = datetime.datetime.now()

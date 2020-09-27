@@ -58,7 +58,7 @@ class PollSerializer(serializers.ModelSerializer):
     class Meta:
         model = Poll
         fields = ['id', 'title', 'description', 'archived', 'premium', 'archived_at', 'created_at', 'questions', 'user','isFavorite']
-        read_only_fields = ('id', 'created_at', 'archived_at', 'user','isFavorite')
+        read_only_fields = ('id', 'created_at', 'archived_at', 'user')
 
     def create(self, validated_data):
         questions_data = validated_data.pop('questions')
