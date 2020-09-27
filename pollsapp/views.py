@@ -37,6 +37,7 @@ class PollViewSet(viewsets.ModelViewSet):
             
         favoritePolls = list()
         for fp in favorites:
+            fp.poll.isFavorite=True
             favoritePolls.append(fp.poll)
         
         serializer = PollSerializer(favoritePolls, many=True)     
@@ -134,7 +135,8 @@ class FavoritePollViewSet(viewsets.ModelViewSet):
     queryset = FavoritePoll.objects.all()
     serializer_class = FavoritePollSerializer
     permission_classes = (IsAdminUser,) 
-    permission_classes_by_action = {'create': [IsAuthenticated]} 
+    permission_classes_by_action = {'create': [IsAuthenticated],
+                                    'destroy' : [IsAuthenticated]}
 
 
     def perform_create(self, serializer):
