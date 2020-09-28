@@ -28,6 +28,26 @@ class PollViewSet(viewsets.ModelViewSet):
         poll.save()
         return Response({'status': 'archived set'})
 
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAdminUser])
+    def archived(self, request):
+        queryset = Poll.objects.filter(archived=True)
+
+        serializer = self.get_serializer(queryset, many=True)
+        if (request.user.is_authenticated):
+            self.setIsFavorite(serializer)
+
+        return Response(serializer.data)      
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
+    def restore(self, request, pk=None):
+        filter_kwargs = {self.lookup_field: self.kwargs[self.lookup_field], 'archived': True}
+        poll = get_object_or_404(Poll.objects, **filter_kwargs)
+        poll.archived = False
+        poll.archived_at = None
+        poll.save()
+        return Response({'status': 'poll {id} successfully restored'.format(id=poll.id)})
+
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def favorites(self, request):
         user = self.request.user
