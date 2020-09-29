@@ -31,9 +31,10 @@ class PollViewSet(viewsets.ModelViewSet):
     filterset_fields = ('user',)
     permission_classes_by_action = {'create': [IsAuthenticated]}    
 
-    @action(detail=True, methods=['post'], permission_classes=[IsPollAdministrator])
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def archive(self, request, pk=None):
-        poll = self.get_object()
+        filter_kwargs = {self.lookup_field: self.kwargs[self.lookup_field], 'user': self.request.user}
+        poll = get_object_or_404(Poll.objects, **filter_kwargs)        
         poll.setArchived(True)
         poll.save()
         return Response({'status': 'archived set'})
