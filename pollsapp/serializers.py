@@ -5,9 +5,10 @@ from .models import Poll, Question, Answer, CustomUser, SubmittedPoll, FavoriteP
 from django.conf import settings
 from rest_auth.models import TokenModel
 from rest_auth.utils import import_callable
-from rest_auth.serializers import UserDetailsSerializer as DefaultUserDetailsSerializer
+# from rest_auth.serializers import UserDetailsSerializer as DefaultUserDetailsSerializer
 
 import logging
+from django.contrib.auth.models import Permission
 
 logger = logging.getLogger("mylogger")
 logger.info("Whatever to log")
@@ -18,12 +19,28 @@ class UserSerializer(serializers.ModelSerializer):
         model = CustomUser
         fields = ('id', 'email', 'username', 'polls',)
 
+class CustomPermissionsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Permission
+        fields = ('id', 'codename')
+
+class CustomUserDetailsSerializer(serializers.ModelSerializer):
+
+    user_permissions = CustomPermissionsSerializer(many=True)
+    """
+    User model w/o password
+    """
+    class Meta:
+        model = CustomUser
+        fields = ('pk', 'username', 'email', 'first_name', 'last_name', 'is_superuser', 'user_permissions')
+        read_only_fields = ('email', 'is_admin', 'is_superuser', 'user_permissions')
+
 
 # This is to allow you to override the UserDetailsSerializer at any time.
 # If you're sure you won't, you can skip this and use DefaultUserDetailsSerializer directly
 rest_auth_serializers = getattr(settings, 'REST_AUTH_SERIALIZERS', {})
 UserDetailsSerializer = import_callable(
-    rest_auth_serializers.get('USER_DETAILS_SERIALIZER', DefaultUserDetailsSerializer)
+    rest_auth_serializers.get('USER_DETAILS_SERIALIZER', CustomUserDetailsSerializer)
 )
 
 

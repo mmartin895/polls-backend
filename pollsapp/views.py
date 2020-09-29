@@ -2,7 +2,7 @@ from rest_framework import viewsets
 from rest_framework import generics, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, BasePermission
 
 from .serializers import PollSerializer, QuestionSerializer, SubmittedPollSerializer, AnswerSerializer, UserSerializer, FavoritePollSerializer
 from .models import Poll, Question, SubmittedPoll, Answer, CustomUser, FavoritePoll
@@ -15,13 +15,23 @@ class UserListView(generics.ListAPIView):
     serializer_class = UserSerializer
 
 
+class IsPollAdministrator(BasePermission):
+    """
+    Allows access only to authenticated users.
+    """
+
+    def has_permission(self, request, view):
+        return bool(request.user and 
+        request.user.is_authenticated and 
+        request.user.has_perm('pollsapp.archived_polls_administration'))
+
 class PollViewSet(viewsets.ModelViewSet):
     queryset = Poll.objects.all()
     serializer_class = PollSerializer
     filterset_fields = ('user',)
     permission_classes_by_action = {'create': [IsAuthenticated]}    
 
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    @action(detail=True, methods=['post'], permission_classes=[IsPollAdministrator])
     def archive(self, request, pk=None):
         poll = self.get_object()
         poll.setArchived(True)
@@ -29,7 +39,7 @@ class PollViewSet(viewsets.ModelViewSet):
         return Response({'status': 'archived set'})
 
 
-    @action(detail=False, methods=['get'], permission_classes=[IsAdminUser])
+    @action(detail=False, methods=['get'], permission_classes=[IsPollAdministrator])
     def archived(self, request):
         queryset = Poll.objects.filter(archived=True)
 
@@ -39,7 +49,7 @@ class PollViewSet(viewsets.ModelViewSet):
 
         return Response(serializer.data)      
 
-    @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
+    @action(detail=True, methods=['post'], permission_classes=[IsPollAdministrator])
     def restore(self, request, pk=None):
         filter_kwargs = {self.lookup_field: self.kwargs[self.lookup_field], 'archived': True}
         poll = get_object_or_404(Poll.objects, **filter_kwargs)

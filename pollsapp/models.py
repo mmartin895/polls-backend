@@ -5,12 +5,16 @@ from django.contrib.auth.models import AbstractUser
 import datetime
 
 class CustomUser(AbstractUser):
-
     def __str__(self):
         return self.username
 
 
 class Poll(models.Model):
+    class Meta:
+        permissions = [
+            ('archived_polls_administration', 'Can manage archived polls')
+        ]
+    
     title = models.CharField(max_length=50)
     description = models.CharField(max_length=100, blank=True)
     archived = models.BooleanField(default=False)
