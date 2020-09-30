@@ -33,7 +33,7 @@ class CustomUserDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = ('pk', 'username', 'email', 'first_name', 'last_name', 'user_permissions')
-        read_only_fields = ('email', 'is_admin', 'user_permissions')
+        read_only_fields = ('email', 'user_permissions')
 
 
 # This is to allow you to override the UserDetailsSerializer at any time.
