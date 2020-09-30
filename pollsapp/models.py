@@ -14,7 +14,7 @@ class Poll(models.Model):
         permissions = [
             ('archived_polls_administration', 'Can manage archived polls')
         ]
-    
+
     title = models.CharField(max_length=50)
     description = models.CharField(max_length=100, blank=True)
     archived = models.BooleanField(default=False)
@@ -23,7 +23,16 @@ class Poll(models.Model):
     archived_at = models.DateTimeField(blank=True, null=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='polls', on_delete=models.CASCADE)
 
-    isFavorite = False
+    @property
+    def isFavorite(self):
+        if not (hasattr(self, '_isFavorite')):
+            self._isFavorite = False
+        return self._isFavorite
+
+
+    @isFavorite.setter
+    def isFavorite(self, value):
+        self._isFavorite = value    
     
     def setArchived(self, archived):
         self.archived = archived
