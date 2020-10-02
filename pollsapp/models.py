@@ -3,11 +3,26 @@ from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import AbstractUser
 import datetime
+from django.http import Http404
 
 class CustomUser(AbstractUser):
     def __str__(self):
         return self.username
 
+class PollManager(models.Manager):
+    def archive(self, pk, user):
+        poll = self.get(pk=pk,user=user)
+        poll.archived = True
+        poll.archived_at = datetime.datetime.now()
+        poll.save()
+
+    def restore(self, pk):
+        poll = self.get(pk=pk,archived=True)
+        poll.archived = False
+        poll.archived_at = None
+        poll.save()
+
+     
 
 class Poll(models.Model):
     class Meta:
@@ -32,11 +47,11 @@ class Poll(models.Model):
 
     @isFavorite.setter
     def isFavorite(self, value):
-        self._isFavorite = value    
+        self._isFavorite = value
+
+    objects = PollManager()
     
-    def setArchived(self, archived):
-        self.archived = archived
-        self.archived_at = datetime.datetime.now()
+
 
 class Question(models.Model):
     class QuestionChoice(models.TextChoices):

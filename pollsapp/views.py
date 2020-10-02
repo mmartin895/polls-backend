@@ -33,31 +33,22 @@ class PollViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def archive(self, request, pk=None):
-        filter_kwargs = {self.lookup_field: self.kwargs[self.lookup_field], 'user': self.request.user}
-        poll = get_object_or_404(Poll.objects, **filter_kwargs)        
-        poll.setArchived(True)
-        poll.save()
+        Poll.objects.archive(self.kwargs['pk'], self.request.user)
         return Response({'status': 'archived set'})
-
-
-    @action(detail=False, methods=['get'], permission_classes=[IsPollAdministrator])
-    def archived(self, request):
-        queryset = Poll.objects.filter(archived=True)
-
-        serializer = self.get_serializer(queryset, many=True)
-        if (request.user.is_authenticated):
-            self.setIsFavorite(serializer)
-
-        return Response(serializer.data)      
 
     @action(detail=True, methods=['post'], permission_classes=[IsPollAdministrator])
     def restore(self, request, pk=None):
-        filter_kwargs = {self.lookup_field: self.kwargs[self.lookup_field], 'archived': True}
-        poll = get_object_or_404(Poll.objects, **filter_kwargs)
-        poll.archived = False
-        poll.archived_at = None
-        poll.save()
-        return Response({'status': 'poll {id} successfully restored'.format(id=poll.id)})
+        Poll.objects.restore(self.kwargs['pk'])
+        return Response({'status': 'poll {id} successfully restored'.format(self.kwargs['pk'])})        
+
+    @action(detail=False, methods=['get'], permission_classes=[IsPollAdministrator])
+    def archived(self, request):
+        polls = list(Poll.objects.filter(archived=True))
+        if (request.user.is_authenticated):
+            self.setIsFavorite(polls)
+
+        serializer = self.get_serializer(polls, many=True)
+        return Response(serializer.data)      
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def favorites(self, request):
@@ -69,7 +60,8 @@ class PollViewSet(viewsets.ModelViewSet):
         favoritePolls = list()
         for fp in favorites:
             fp.poll.isFavorite=True
-            favoritePolls.append(fp.poll)
+            if not (fp.poll.archived):
+                favoritePolls.append(fp.poll)
         
         serializer = PollSerializer(favoritePolls, many=True)     
         return Response(serializer.data)   
@@ -85,27 +77,31 @@ class PollViewSet(viewsets.ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
+        polls = list(queryset)
 
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            if (request.user.is_authenticated):
-                self.setIsFavorite(serializer)
+        # TODO: Introduce pagination at later point
+        # page = self.paginate_queryset(queryset)
+        # if page is not None:
+        #     polls = list(page)
+        #     serializer = self.get_serializer(polls, many=True)
+        #     if (request.user.is_authenticated):
+        #         self.setIsFavorite(serializer)
 
-            return self.get_paginated_response(serializer.data)
+        #     return self.get_paginated_response(serializer.data)
 
-        serializer = self.get_serializer(queryset, many=True)
+        
         if (request.user.is_authenticated):
-            self.setIsFavorite(serializer)
+            self.setIsFavorite(polls)
 
+        serializer = self.get_serializer(polls, many=True)
         return Response(serializer.data)
 
-    def setIsFavorite(self, serializer):
+    def setIsFavorite(self, polls):
         favorites = list(FavoritePoll.objects.filter(user_id = self.request.user.id))
 
-        for poll in serializer.data:
-            favorite = next((fav for fav in favorites if fav.poll_id == poll['id']), None)
-            poll['isFavorite'] = favorite is not None
+        for poll in polls:
+            favorite = next((fav for fav in favorites if fav.poll_id == poll.id), None)
+            poll.isFavorite = favorite is not None
     
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
