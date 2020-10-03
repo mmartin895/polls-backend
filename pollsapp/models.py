@@ -10,6 +10,25 @@ class CustomUser(AbstractUser):
         return self.username
 
 class PollManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(archived=False)
+
+    def get_archived(self):
+        return super().get_queryset().filter(archived=True)
+
+    def get_favorites(self,user):
+        favorites = list(FavoritePoll.objects
+            .filter(user_id=user.id)
+            .select_related('poll'))
+            
+        result_list = list()
+        for fp in favorites:
+            fp.poll.isFavorite=True
+            if not (fp.poll.archived):
+                result_list.append(fp.poll)
+        return result_list        
+
+
     def archive(self, pk, user):
         poll = self.get(pk=pk,user=user)
         poll.archived = True
@@ -22,6 +41,49 @@ class PollManager(models.Manager):
         poll.archived_at = None
         poll.save()
 
+    def create(self, user, validated_data):
+        questions_data = validated_data.pop('questions')
+        poll = super().create(**validated_data,user=user)
+        for question in questions_data:
+            del question['id']
+            Question.objects.create(poll=poll, **question)
+
+        return poll
+
+    def update(self, instance, validated_data):
+        questions_data = list(validated_data.pop('questions')) # pitanja iz requesta
+        questions = list(instance.questions.all()) # pitanja u bazi
+
+        instance.title = validated_data.get('title', instance.title)
+        instance.description = validated_data.get('description', instance.description)
+        instance.premium = validated_data.get('premium', instance.premium)
+        instance.save()
+        questions_to_delete = []
+
+        for q_instance in questions:
+            found_question = next((q for q in questions_data if q.get('id') == q_instance.id), None)
+            if found_question:
+                # pitanje postoji->update pitanja u bazi
+                # brisanje pitanja iz requesta kako bi ostala samo pitanja koja treba dodati
+                q_instance.content = found_question.get('content', q_instance.content)
+                q_instance.type = found_question.get('type', q_instance.type)
+                q_instance.choices = found_question.get('choices', q_instance.choices)
+                q_instance.required = found_question.get('required', q_instance.required)
+                q_instance.save()
+                questions_data.remove(found_question)
+
+            else:
+                # dodajemo q_instance u questions to delete
+                questions_to_delete.append(q_instance)
+
+        for q in questions_data:
+            del q['id']
+            Question.objects.create(poll=instance, **q)
+
+        for q in questions_to_delete:
+            q.delete()
+
+        return instance        
      
 
 class Poll(models.Model):

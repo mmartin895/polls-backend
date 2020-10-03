@@ -8,6 +8,10 @@ from .serializers import PollSerializer, QuestionSerializer, SubmittedPollSerial
 from .models import Poll, Question, SubmittedPoll, Answer, CustomUser, FavoritePoll
 from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404
+from pollsapp.models import PollManager
+
+from django_filters.rest_framework.backends import DjangoFilterBackend
+from rest_framework import filters
 
 
 class UserListView(generics.ListAPIView):
@@ -27,7 +31,10 @@ class IsPollAdministrator(BasePermission):
 
 class PollViewSet(viewsets.ModelViewSet):
     queryset = Poll.objects.all()
+    
     serializer_class = PollSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    search_fields = ['title', 'description']    
     filterset_fields = ('user',)
     permission_classes_by_action = {'create': [IsAuthenticated]}    
 
@@ -43,7 +50,7 @@ class PollViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], permission_classes=[IsPollAdministrator])
     def archived(self, request):
-        polls = list(Poll.objects.filter(archived=True))
+        polls = list(Poll.objects.get_archived())
         if (request.user.is_authenticated):
             self.setIsFavorite(polls)
 
@@ -53,15 +60,7 @@ class PollViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def favorites(self, request):
         user = self.request.user
-        favorites = list(FavoritePoll.objects
-            .filter(user_id=user.id)
-            .select_related('poll'))
-            
-        favoritePolls = list()
-        for fp in favorites:
-            fp.poll.isFavorite=True
-            if not (fp.poll.archived):
-                favoritePolls.append(fp.poll)
+        favoritePolls = Poll.objects.get_favorites(user)
         
         serializer = PollSerializer(favoritePolls, many=True)     
         return Response(serializer.data)   
@@ -69,8 +68,7 @@ class PollViewSet(viewsets.ModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         if (request.user.is_authenticated):
-            favorites = list(FavoritePoll.objects.filter(user_id = self.request.user.id))
-            instance.isFavorite = next((fav for fav in favorites if fav.poll_id == instance.id), None) is not None
+            self.setIsFavorite(instance, many=False)        
 
         serializer = self.get_serializer(instance)
         return Response(serializer.data)        
@@ -79,7 +77,7 @@ class PollViewSet(viewsets.ModelViewSet):
         queryset = self.filter_queryset(self.get_queryset())
         polls = list(queryset)
 
-        # TODO: Introduce pagination at later point
+        # TODO: Introduce pagination at some later point
         # page = self.paginate_queryset(queryset)
         # if page is not None:
         #     polls = list(page)
@@ -95,30 +93,39 @@ class PollViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(polls, many=True)
         return Response(serializer.data)
-
-    def setIsFavorite(self, polls):
-        favorites = list(FavoritePoll.objects.filter(user_id = self.request.user.id))
-
-        for poll in polls:
-            favorite = next((fav for fav in favorites if fav.poll_id == poll.id), None)
-            poll.isFavorite = favorite is not None
     
     def update(self, request, *args, **kwargs):
-        partial = kwargs.pop('partial', False)
         instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
         if not (instance.user==self.request.user):
             return Response({'status': 'unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
-        self.perform_update(serializer)
-        return Response(serializer.data)
+        return super().update(request, args, kwargs)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        poll = Poll.objects.create(self.request.user, serializer.validated_data)
+        serializer = self.get_serializer(poll)
+        # self.perform_create(serializer)
+        headers =  self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)        
+
+    # def perform_update(self, serializer):
+    #     Poll.objects.update(serializer.instance, serializer.original_data)
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        Poll.objects.create(self.request.user, serializer.validated_data)
 
-    def get_queryset(self):
-        return Poll.objects.filter(archived=False)
+    def setIsFavorite(self, data, many=True):
+        favorites = list(FavoritePoll.objects.filter(user_id = self.request.user.id))
+
+        if (many):
+            for poll in data:
+                favorite = next((fav for fav in favorites if fav.poll_id == poll.id), None)
+                poll.isFavorite = favorite is not None
+        else:
+            favorite = next((fav for fav in favorites if fav.poll_id == data.id), None)
+            data.isFavorite = favorite is not None
 
     def get_permissions(self):
         try:

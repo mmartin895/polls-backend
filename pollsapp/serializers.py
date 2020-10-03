@@ -77,56 +77,6 @@ class PollSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'description', 'archived', 'premium', 'archived_at', 'created_at', 'questions', 'user','isFavorite']
         read_only_fields = ('id', 'created_at', 'archived_at', 'user')
 
-    def create(self, validated_data):
-        questions_data = validated_data.pop('questions')
-        poll = Poll.objects.create(**validated_data)
-        for question in questions_data:
-            del question['id']
-            Question.objects.create(poll=poll, **question)
-        return poll
-
-    def update(self, instance, validated_data):
-        questions_data = validated_data.pop('questions')
-        questions_data = list(questions_data)
-        logger.info(questions_data)
-        questions = (instance.questions).all()
-        questions = list(questions)  # pitanja u bazi
-
-        instance.title = validated_data.get('title', instance.title)
-        instance.description = validated_data.get('description', instance.description)
-        instance.premium = validated_data.get('premium', instance.premium)
-        instance.save()
-        questions_to_delete = []
-
-        # questions - pitanja iz baze
-        # questions_data - pitanja iz requesta
-
-        for q_instance in questions:
-            found_question = next((q for q in questions_data if q.get('id') == q_instance.id), None)
-            if found_question:
-                # pitanje postoji->update pitanja u bazi
-                # brisanje pitanja iz requesta kako bi ostala samo pitanja koja treba dodati
-                q_instance.content = found_question.get('content', q_instance.content)
-                q_instance.type = found_question.get('type', q_instance.type)
-                q_instance.choices = found_question.get('choices', q_instance.choices)
-                q_instance.required = found_question.get('required', q_instance.required)
-                q_instance.save()
-                questions_data.remove(found_question)
-
-            else:
-                # dodajemo q_instance u questions to delete
-                questions_to_delete.append(q_instance)
-
-        for q in questions_data:
-            del q['id']
-            Question.objects.create(poll=instance, **q)
-
-        for q in questions_to_delete:
-            q.delete()
-
-        return instance
-
-
 class SubmittedPollSerializer(serializers.ModelSerializer):
     user = serializers.ReadOnlyField(source='user.email')
     answers = AnswerSerializer(many=True)
