@@ -106,15 +106,11 @@ class PollViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         poll = Poll.objects.create(self.request.user, serializer.validated_data)
         serializer = self.get_serializer(poll)
-        # self.perform_create(serializer)
         headers =  self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)        
 
-    # def perform_update(self, serializer):
-    #     Poll.objects.update(serializer.instance, serializer.original_data)
-
-    def perform_create(self, serializer):
-        Poll.objects.create(self.request.user, serializer.validated_data)
+    def perform_update(self, serializer):
+        Poll.objects.update(serializer.instance, serializer.validated_data)
 
     def setIsFavorite(self, data, many=True):
         favorites = list(FavoritePoll.objects.filter(user_id = self.request.user.id))
