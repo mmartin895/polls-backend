@@ -92,6 +92,8 @@ class Poll(models.Model):
             ('archived_polls_administration', 'Can manage archived polls')
         ]
 
+    objects = PollManager()
+
     title = models.CharField(max_length=50)
     description = models.CharField(max_length=100, blank=True)
     archived = models.BooleanField(default=False)
@@ -110,9 +112,6 @@ class Poll(models.Model):
     @isFavorite.setter
     def isFavorite(self, value):
         self._isFavorite = value
-
-    objects = PollManager()
-    
 
 
 class Question(models.Model):

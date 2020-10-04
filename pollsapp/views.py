@@ -50,7 +50,7 @@ class PollViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], permission_classes=[IsPollAdministrator])
     def archived(self, request):
-        polls = list(Poll.objects.get_archived())
+        polls = list(self.filter_queryset(Poll.objects.get_archived()))
         if (request.user.is_authenticated):
             self.setIsFavorite(polls)
 
