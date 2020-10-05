@@ -65,6 +65,14 @@ class PollViewSet(viewsets.ModelViewSet):
         serializer = PollSerializer(favoritePolls, many=True)     
         return Response(serializer.data)   
 
+    @action(detail=True, methods=['delete'], permission_classes=[IsPollAdministrator])
+    def delete(self, request, *args, **kwargs):
+        user=self.request.user
+        instance = get_object_or_404(Poll.objects.get_archived().filter(pk=kwargs['pk']))
+        
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)           
+
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         if (request.user.is_authenticated):
