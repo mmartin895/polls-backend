@@ -17,17 +17,7 @@ class PollManager(models.Manager):
         return super().get_queryset().filter(archived=True)
 
     def get_favorites(self,user):
-        favorites = list(FavoritePoll.objects
-            .filter(user_id=user.id)
-            .select_related('poll'))
-            
-        result_list = list()
-        for fp in favorites:
-            fp.poll.isFavorite=True
-            if not (fp.poll.archived):
-                result_list.append(fp.poll)
-        return result_list        
-
+        return super().get_queryset().filter(faved_by__user__user_id=user.id).distinct()
 
     def archive(self, pk, user):
         poll = self.get(pk=pk,user=user)
@@ -101,6 +91,7 @@ class Poll(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     archived_at = models.DateTimeField(blank=True, null=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='polls', on_delete=models.CASCADE)
+    faved_by = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name="faved_by", through="FavoritePoll")
 
     @property
     def isFavorite(self):

@@ -60,7 +60,9 @@ class PollViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def favorites(self, request):
         user = self.request.user
-        favoritePolls = Poll.objects.get_favorites(user)
+        favoritePolls = self.filter_queryset(Poll.objects.get_favorites(user))
+        for poll in favoritePolls:
+            poll.isFavorite = True
         
         serializer = PollSerializer(favoritePolls, many=True)     
         return Response(serializer.data)   
